@@ -44,7 +44,7 @@ public static class Generator
         
         SKIP_ERROR:
         Console.WriteLine("Found!");
-        StringBuilder code = new StringBuilder($"{Namespace}.Element element = {Namespace}.Ron.Parse(<<RON_SERIALIZER_TEXT>>);\n");
+        StringBuilder code = new StringBuilder($"{Namespace}.Element element = {Namespace}.RON.Parse(<<RON_SERIALIZER_TEXT>>);\n");
         
         code.AppendLine($"var obj = new {type.FullName}();");
 
