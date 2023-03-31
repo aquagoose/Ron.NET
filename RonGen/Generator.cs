@@ -83,10 +83,12 @@ public static class Generator
                 code.AppendLine($"{element}.AsChar;");
             else if (field.FieldType == typeof(bool))
                 code.AppendLine($"{element}.AsBool;");
+            else if (field.FieldType.BaseType == typeof(Enum))
+                code.AppendLine($"Enum.Parse<{field.FieldType.FullName}>({element}.AsString);");
             else
             {
                 code.AppendLine($"new {field.FieldType.FullName}();");
-                code.AppendLine(AppendCode(field.FieldType, types + $".{field.Name}"));
+                code.Append(AppendCode(field.FieldType, types + $".{field.Name}"));
             }
         }
 

@@ -53,6 +53,12 @@ public static class Ron
             {
                 case TokenType.Identifier:
                 {
+                    if (tokens.Length == 1)
+                    {
+                        element = new Element((string) token.Literal);
+                        continue;
+                    }
+
                     int indentationLevels = 0;
                     int endToken = t + 1;
 

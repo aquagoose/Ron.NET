@@ -8,7 +8,7 @@ Stuff(
     String: ""This is a test!"",
     Boolean: true,
 
-    Struct: (X: 0, Y: 1.23452, Z: ""hello"", W: false)
+    Struct: (X: 0, Y: 1.23452, Z: ""hello"", W: false),
 )
 ";
 
