@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Reflection;
 using System.Text;
+using Ron.NET;
 
 namespace RonGen;
 
@@ -63,6 +64,13 @@ public static class Generator
             string[] splitTypes = types.Split('.', StringSplitOptions.RemoveEmptyEntries);
 
             Console.WriteLine(Pad($"        Generating deserializer for field {field.Name}...", splitTypes.Length * 2));
+            
+            if (field.GetCustomAttribute(typeof(RonIgnoreAttribute)) != null)
+            {
+                Console.WriteLine(Pad($"        Ignored.", splitTypes.Length * 2));
+                continue;
+            }
+            
             StringBuilder element = new StringBuilder("element");
 
             code.Append("obj.");
@@ -147,6 +155,12 @@ public static class Generator
         {
             string[] splitVar = varName.Split('.', StringSplitOptions.RemoveEmptyEntries);
             Console.WriteLine(Pad($"        Generating serializer for field \"{info.Name}\"", splitVar.Length * 2));
+
+            if (info.GetCustomAttribute(typeof(RonIgnoreAttribute)) != null)
+            {
+                Console.WriteLine(Pad($"        Ignored.", splitVar.Length * 2));
+                continue;
+            }
             
             if (!info.FieldType.IsPrimitive && info.FieldType.BaseType != typeof(Enum) && info.FieldType != typeof(string))
             {
