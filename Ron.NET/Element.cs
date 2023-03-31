@@ -15,13 +15,13 @@ public class Element
         Value = null;
     }
 
-    public T GetValue<T>()
-    {
-        if (Value == null)
-            return default;
+    public double AsDouble => (double) Value;
 
-        return (T) Value;
-    }
+    public string AsString => (string) Value;
+
+    public char AsChar => (char) Value;
+
+    public bool AsBool => (bool) Value;
 
     public Element this[string name] => Elements[name];
 
