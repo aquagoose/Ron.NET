@@ -44,12 +44,12 @@ public static class Generator
         
         code.AppendLine($"var obj = new {type.FullName}();");
 
-        code.AppendLine(AppendCode(type, ""));
+        code.AppendLine(AppendDeserializerCode(type, ""));
 
         return code.ToString();
     }
 
-    private static string AppendCode(Type type, string types)
+    private static string AppendDeserializerCode(Type type, string types)
     {
         StringBuilder code = new StringBuilder();
         
@@ -84,14 +84,29 @@ public static class Generator
             else if (field.FieldType == typeof(bool))
                 code.AppendLine($"{element}.AsBool;");
             else if (field.FieldType.BaseType == typeof(Enum))
-                code.AppendLine($"Enum.Parse<{field.FieldType.FullName}>({element}.AsString);");
+                code.AppendLine($"System.Enum.Parse<{field.FieldType.FullName}>({element}.AsString);");
             else
             {
-                code.AppendLine($"new {field.FieldType.FullName}();");
-                code.Append(AppendCode(field.FieldType, types + $".{field.Name}"));
+                code.AppendLine($"new {field.FieldType.GetTypeNameWithoutGeneric() + (field.FieldType.IsGenericType ? $"<{field.FieldType.GetGenericArguments()[0].FullName}>" : "" )}();");
+                code.Append(AppendDeserializerCode(field.FieldType, types + $".{field.Name}"));
             }
         }
 
         return code.ToString();
+    }
+
+    //public static string GenerateSerializerForType(Type type)
+    //{
+        
+    //}
+
+    private static string GetTypeNameWithoutGeneric(this Type type)
+    {
+        string name = type.FullName;
+        int index = name.IndexOf('`');
+        if (index != -1)
+            return name[..index];
+
+        return name;
     }
 }

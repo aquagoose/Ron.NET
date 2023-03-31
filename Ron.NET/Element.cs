@@ -6,13 +6,20 @@ namespace Ron.NET;
 
 public class Element
 {
-    internal Dictionary<string, Element> Elements;
-    internal object Value;
+    public Dictionary<string, Element> Elements;
+    public object Value;
 
-    internal Element()
+    public Element(params (string name, Element element)[] elements)
     {
-        Elements = new Dictionary<string, Element>();
+        Elements = new Dictionary<string, Element>(elements.Length);
+        foreach ((string name, Element element) in elements)
+            Elements.Add(name, element);
         Value = null;
+    }
+    
+    public Element(object value)
+    {
+        Value = value;
     }
 
     public double AsDouble => (double) Value;
@@ -28,11 +35,6 @@ public class Element
     public KeyValuePair<string, Element> this[int index] => Elements.ElementAt(index);
 
     public int NumSubElements => Elements?.Count ?? 0;
-
-    internal Element(object value)
-    {
-        Value = value;
-    }
 
     private string Serialize(int indentationLevel)
     {
