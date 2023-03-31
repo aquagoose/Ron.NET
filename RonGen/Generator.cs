@@ -95,14 +95,60 @@ public static class Generator
         return code.ToString();
     }
 
-    //public static string GenerateSerializerForType(Type type)
-    //{
-        
-    //}
+    public static string GenerateSerializerMethodForType(Type type, string methodName = null)
+    {
+        methodName ??= "Serialize_" + type.GetTypeNameWithoutGeneric(true);
 
-    private static string GetTypeNameWithoutGeneric(this Type type)
+        StringBuilder code = new StringBuilder($"public static Element {methodName}({type.GetTypeNameWithoutGeneric()} value)" + "\n{\n");
+
+        code.AppendLine("    " + 
+            GenerateSerializerForType(type)
+                .Replace("\n", "\n    ")
+                .Replace("<<RON_SERIALIZER_TYPE_NAME>>", "value")
+            );
+
+        code.AppendLine("    return element;");
+        code.Append('}');
+
+        return code.ToString();
+    }
+
+    public static string GenerateSerializerForType(Type type)
+    {
+        const string defaultElement = "element";
+        
+        StringBuilder code = new StringBuilder($"{Namespace}.Element {defaultElement} = new {Namespace}.Element();\n");
+
+        code.Append(AppendSerializerCode(type, defaultElement, "<<RON_SERIALIZER_TYPE_NAME>>"));
+        
+        return code.ToString();
+    }
+
+    private static string AppendSerializerCode(Type type, string elementName, string varName)
+    {
+        StringBuilder code = new StringBuilder();
+
+        foreach (FieldInfo info in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
+        {
+            if (!info.FieldType.IsPrimitive && info.FieldType.BaseType != typeof(Enum) && info.FieldType != typeof(string))
+            {
+                string name = info.FieldType.GetTypeNameWithoutGeneric(true) + "_Element" + ((ulong) Random.Shared.NextInt64()).ToString("X");
+                code.AppendLine($"{Namespace}.Element {name} = new {Namespace}.Element();");
+                code.AppendLine(AppendSerializerCode(info.FieldType, name, varName + $".{info.Name}"));
+                code.AppendLine($"{elementName}.Elements.Add(\"{info.Name}\", {name});");
+            }
+            else
+                code.AppendLine($"{elementName}.Elements.Add(\"{info.Name}\", new Element({varName}.{info.Name}));");
+        }
+
+        return code.ToString();
+    }
+
+    private static string GetTypeNameWithoutGeneric(this Type type, bool replace = false)
     {
         string name = type.FullName;
+        if (replace)
+            name = name.Replace('.', '_');
         int index = name.IndexOf('`');
         if (index != -1)
             return name[..index];
