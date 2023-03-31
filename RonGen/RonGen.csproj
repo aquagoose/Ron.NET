@@ -7,9 +7,4 @@
         <Nullable>disable</Nullable>
     </PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\Ron.NET\Ron.NET.csproj" />
-      <ProjectReference Include="..\RonGen\RonGen.csproj" />
-    </ItemGroup>
-
 </Project>
