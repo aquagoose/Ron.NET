@@ -15,13 +15,13 @@ public static class Generator
         methodName ??= $"Deserialize_{type.FullName.Replace('.', '_')}";
 
         StringBuilder builder = new StringBuilder();
-        builder.AppendLine($"public static {type.FullName} {methodName}(string ron)" + "\n{");
+        builder.AppendLine($"public static object {methodName}(string ron)" + "\n{");
         builder.AppendLine("    " + 
             GenerateDeserializerForType(type)
                 .Replace("\n", "\n    ")
                 .Replace("<<RON_SERIALIZER_TEXT>>", "ron")
             );
-        builder.AppendLine("    return obj;\n}");
+        builder.AppendLine("    return (object) obj;\n}");
         return builder.ToString();
     }
     
@@ -99,12 +99,14 @@ public static class Generator
     {
         methodName ??= "Serialize_" + type.GetTypeNameWithoutGeneric(true);
 
-        StringBuilder code = new StringBuilder($"public static Element {methodName}({type.GetTypeNameWithoutGeneric()} value)" + "\n{\n");
+        StringBuilder code = new StringBuilder($"public static {Namespace}.Element {methodName}(object value)" + "\n{\n");
 
+        code.AppendLine($"    {type.FullName} sValue = ({type.FullName}) value;");
+        
         code.AppendLine("    " + 
             GenerateSerializerForType(type)
                 .Replace("\n", "\n    ")
-                .Replace("<<RON_SERIALIZER_TYPE_NAME>>", "value")
+                .Replace("<<RON_SERIALIZER_TYPE_NAME>>", "sValue")
             );
 
         code.AppendLine("    return element;");
@@ -138,8 +140,49 @@ public static class Generator
                 code.AppendLine($"{elementName}.Elements.Add(\"{info.Name}\", {name});");
             }
             else
-                code.AppendLine($"{elementName}.Elements.Add(\"{info.Name}\", new Element({varName}.{info.Name}));");
+                code.AppendLine($"{elementName}.Elements.Add(\"{info.Name}\", new {Namespace}.Element({varName}.{info.Name}));");
         }
+
+        return code.ToString();
+    }
+
+    public static string GenerateRonGenMethodsClass(Type[] types, string className, string @namespace)
+    {
+        StringBuilder code = new StringBuilder($"namespace {@namespace};\n\n");
+        code.AppendLine($"public class {className} : {Namespace}.RonGenMethods" + "\n{");
+
+        code.AppendLine($"    public {className}() : base()" + "\n    {\n        Methods = new()\n        {");
+        int i = 0;
+        foreach (Type type in types)
+        {
+            code.Append($"            [typeof({type.GetTypeNameWithoutGeneric()})] = (Serialize_{type.GetTypeNameWithoutGeneric(true)}, Deserialize_{type.GetTypeNameWithoutGeneric(true)})");
+            if (i < types.Length - 1)
+                code.AppendLine(",");
+            else
+                code.AppendLine();
+        }
+
+        code.AppendLine("        };");
+        
+        code.AppendLine("    }");
+
+        code.AppendLine();
+
+        foreach (Type type in types)
+        {
+            code.AppendLine("    " + 
+                GenerateSerializerMethodForType(type)
+                    .Replace("\n", "\n    ")
+            );
+            code.AppendLine();
+            code.AppendLine("    " + 
+                GenerateDeserializerMethodForType(type)
+                    .Replace("\n", "\n    ")
+                );
+            code.AppendLine();
+        }
+
+        code.Append("}");
 
         return code.ToString();
     }

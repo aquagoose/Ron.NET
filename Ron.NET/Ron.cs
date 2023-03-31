@@ -6,6 +6,13 @@ namespace Ron.NET;
 
 public static class Ron
 {
+    private static RonGenMethods _genMethods;
+
+    public static void Init(RonGenMethods methods)
+    {
+        _genMethods = methods;
+    }
+    
     public static Element Parse(string ron)
     {
         RonParser parser = new RonParser(ron);
@@ -17,28 +24,12 @@ public static class Ron
 
     public static T Deserialize<T>(string ron)
     {
-        Type type = typeof(T);
-        foreach (ConstructorInfo info in type.GetConstructors())
-        {
-            if (info.GetParameters().Length == 0)
-                goto SKIP_ERROR;
-        }
+        return (T) _genMethods.Methods[typeof(T)].deserialize(ron);
+    }
 
-        throw new InvalidOperationException("A parameterless constructor must be defined.");
-        
-        SKIP_ERROR:
-        Element element = Parse(ron);
-
-        T obj = Activator.CreateInstance<T>();
-
-        for (int i = 0; i < element.NumSubElements; i++)
-        {
-            FieldInfo fInfo;
-            
-            //if ((fInfo = type.GetField()) != null)
-        }
-
-        return default;
+    public static string Serialize(object obj)
+    {
+        return _genMethods.Methods[obj.GetType()].serialize(obj).ToString();
     }
 
     private static Element ParseElement(Token[] tokens)
