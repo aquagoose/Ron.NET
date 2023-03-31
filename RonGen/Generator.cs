@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 using System.Reflection;
 using System.Text;
@@ -26,6 +27,9 @@ public static class Generator
     
     public static string GenerateDeserializerForType(Type type)
     {
+        if (type.IsValueType)
+            goto SKIP_ERROR;
+        
         foreach (ConstructorInfo info in type.GetConstructors())
         {
             if (info.GetParameters().Length == 0)
@@ -40,9 +44,30 @@ public static class Generator
         
         code.AppendLine($"var obj = new {type.FullName}();");
 
+        code.AppendLine(AppendCode(type, ""));
+
+        return code.ToString();
+    }
+
+    private static string AppendCode(Type type, string types)
+    {
+        StringBuilder code = new StringBuilder();
+        
         foreach (FieldInfo field in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
         {
-            code.Append("obj." + field.Name + " = ");
+            StringBuilder element = new StringBuilder("element");
+
+            code.Append("obj.");
+            foreach (string t in types.Split('.', StringSplitOptions.RemoveEmptyEntries))
+            {
+                code.Append(t + ".");
+                element.Append($"[\"{t}\"]");
+            }
+
+            element.Append($"[\"{field.Name}\"]");
+
+            code.Append(field.Name + " = ");
+
 
             if (field.FieldType == typeof(sbyte) || field.FieldType == typeof(byte) ||
                 field.FieldType == typeof(short) || field.FieldType == typeof(ushort) ||
@@ -50,14 +75,19 @@ public static class Generator
                 field.FieldType == typeof(long) || field.FieldType == typeof(ulong) ||
                 field.FieldType == typeof(float) || field.FieldType == typeof(double))
             {
-                code.AppendLine($"({field.FieldType.FullName}) element[\"{field.Name}\"].AsDouble;");
+                code.AppendLine($"({field.FieldType.FullName}) {element}.AsDouble;");
             }
             else if (field.FieldType == typeof(string))
-                code.AppendLine($"element[\"{field.Name}\"].AsString;");
+                code.AppendLine($"{element}.AsString;");
             else if (field.FieldType == typeof(char))
-                code.AppendLine($"element[\"{field.Name}\"].AsChar;");
+                code.AppendLine($"{element}.AsChar;");
             else if (field.FieldType == typeof(bool))
-                code.AppendLine($"element[\"{field.Name}\"].AsBool;");
+                code.AppendLine($"{element}.AsBool;");
+            else
+            {
+                code.AppendLine($"new {field.FieldType.FullName}();");
+                code.AppendLine(AppendCode(field.FieldType, types + $".{field.Name}"));
+            }
         }
 
         return code.ToString();
