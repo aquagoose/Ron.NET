@@ -8,6 +8,8 @@ using CommandLine;
 using Ron.NET;
 using RonGen;
 
+Console.WriteLine($"RonGen {Assembly.GetExecutingAssembly().GetName().Version}\nskyebird189 2023");
+
 CliArgs cli = Parser.Default.ParseArguments<CliArgs>(args).Value;
 
 string path = cli.Path;
@@ -25,9 +27,14 @@ AssemblyLoadContext.Default.Resolving += (context, name) =>
 Assembly assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(path);
 assembly.GetReferencedAssemblies();
 
-string output = Generator.GenerateRonGenMethodsClass(
-    assembly.GetTypes().Where(type => type.GetCustomAttribute(typeof(RonGenAttribute)) != null).ToArray(),
-    cli.ClassName, cli.Namespace);
+Console.WriteLine($"Searching for classes and structs in {assembly.FullName} with attribute {typeof(RonGenAttribute)}...");
+
+Type[] types = assembly.GetTypes().Where(type => type.GetCustomAttribute(typeof(RonGenAttribute)) != null).ToArray();
+
+foreach (Type type in types)
+    Console.WriteLine($"Found {type.FullName}.");
+
+string output = Generator.GenerateRonGenMethodsClass(types, cli.ClassName, cli.Namespace);
 
 if (cli.Output == null)
     Console.WriteLine(output);

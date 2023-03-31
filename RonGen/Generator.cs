@@ -12,6 +12,7 @@ public static class Generator
     
     public static string GenerateDeserializerMethodForType(Type type, string methodName = null)
     {
+        Console.WriteLine("Generating deserializer method...");
         methodName ??= $"Deserialize_{type.FullName.Replace('.', '_')}";
 
         StringBuilder builder = new StringBuilder();
@@ -27,6 +28,7 @@ public static class Generator
     
     public static string GenerateDeserializerForType(Type type)
     {
+        Console.Write("    Searching for a parameterless constructor... ");
         if (type.IsValueType)
             goto SKIP_ERROR;
         
@@ -40,11 +42,14 @@ public static class Generator
             "Type is missing parameterless constructor which is required for initialization.");
         
         SKIP_ERROR:
+        Console.WriteLine("Found!");
         StringBuilder code = new StringBuilder($"{Namespace}.Element element = {Namespace}.Ron.Parse(<<RON_SERIALIZER_TEXT>>);\n");
         
         code.AppendLine($"var obj = new {type.FullName}();");
 
+        Console.WriteLine("    Generating deserializer code...");
         code.AppendLine(AppendDeserializerCode(type, ""));
+        Console.WriteLine("    Done!");
 
         return code.ToString();
     }
@@ -55,10 +60,13 @@ public static class Generator
         
         foreach (FieldInfo field in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
         {
+            string[] splitTypes = types.Split('.', StringSplitOptions.RemoveEmptyEntries);
+
+            Console.WriteLine(Pad($"        Generating deserializer for field {field.Name}...", splitTypes.Length * 2));
             StringBuilder element = new StringBuilder("element");
 
             code.Append("obj.");
-            foreach (string t in types.Split('.', StringSplitOptions.RemoveEmptyEntries))
+            foreach (string t in splitTypes)
             {
                 code.Append(t + ".");
                 element.Append($"[\"{t}\"]");
@@ -90,6 +98,8 @@ public static class Generator
                 code.AppendLine($"new {field.FieldType.GetTypeNameWithoutGeneric() + (field.FieldType.IsGenericType ? $"<{field.FieldType.GetGenericArguments()[0].FullName}>" : "" )}();");
                 code.Append(AppendDeserializerCode(field.FieldType, types + $".{field.Name}"));
             }
+            
+            Console.WriteLine(Pad("        Done!", splitTypes.Length * 2));
         }
 
         return code.ToString();
@@ -97,6 +107,7 @@ public static class Generator
 
     public static string GenerateSerializerMethodForType(Type type, string methodName = null)
     {
+        Console.WriteLine("Generating serializer method...");
         methodName ??= "Serialize_" + type.GetTypeNameWithoutGeneric(true);
 
         StringBuilder code = new StringBuilder($"public static {Namespace}.Element {methodName}(object value)" + "\n{\n");
@@ -121,7 +132,9 @@ public static class Generator
         
         StringBuilder code = new StringBuilder($"{Namespace}.Element {defaultElement} = new {Namespace}.Element();\n");
 
+        Console.WriteLine("    Generating serializer code...");
         code.Append(AppendSerializerCode(type, defaultElement, "<<RON_SERIALIZER_TYPE_NAME>>"));
+        Console.WriteLine("    Done!");
         
         return code.ToString();
     }
@@ -132,6 +145,9 @@ public static class Generator
 
         foreach (FieldInfo info in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
         {
+            string[] splitVar = varName.Split('.', StringSplitOptions.RemoveEmptyEntries);
+            Console.WriteLine(Pad($"        Generating serializer for field \"{info.Name}\"", splitVar.Length * 2));
+            
             if (!info.FieldType.IsPrimitive && info.FieldType.BaseType != typeof(Enum) && info.FieldType != typeof(string))
             {
                 string name = info.FieldType.GetTypeNameWithoutGeneric(true) + "_Element" + ((ulong) Random.Shared.NextInt64()).ToString("X");
@@ -141,6 +157,8 @@ public static class Generator
             }
             else
                 code.AppendLine($"{elementName}.Elements.Add(\"{info.Name}\", new {Namespace}.Element({varName}.{info.Name}));");
+            
+            Console.WriteLine(Pad("        Done!", splitVar.Length * 2));
         }
 
         return code.ToString();
@@ -148,6 +166,7 @@ public static class Generator
 
     public static string GenerateRonGenMethodsClass(Type[] types, string className, string @namespace)
     {
+        Console.WriteLine($"Generating RonGenMethods class for {types.Length} types.");
         StringBuilder code = new StringBuilder($"namespace {@namespace};\n\n");
         code.AppendLine($"public class {className} : {Namespace}.RonGenMethods" + "\n{");
 
@@ -170,15 +189,19 @@ public static class Generator
 
         foreach (Type type in types)
         {
+            Console.WriteLine($"Generating serializer for {type.GetTypeNameWithoutGeneric()}... ");
             code.AppendLine("    " + 
                 GenerateSerializerMethodForType(type)
                     .Replace("\n", "\n    ")
             );
+            Console.WriteLine("Done!");
             code.AppendLine();
+            Console.WriteLine($"Generating deserializer for {type.GetTypeNameWithoutGeneric()}...");
             code.AppendLine("    " + 
                 GenerateDeserializerMethodForType(type)
                     .Replace("\n", "\n    ")
                 );
+            Console.WriteLine("Done!");
             code.AppendLine();
         }
 
@@ -197,5 +220,10 @@ public static class Generator
             return name[..index];
 
         return name;
+    }
+
+    private static string Pad(string text, int padAmount)
+    {
+        return text.PadLeft(text.Length + padAmount);
     }
 }
