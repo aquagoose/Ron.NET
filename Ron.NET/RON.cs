@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace Ron.NET;
 
-public static class Ron
+public static class RON
 {
     private static RonGenMethods _genMethods;
 

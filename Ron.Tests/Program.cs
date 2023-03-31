@@ -12,7 +12,7 @@ Stuff(
 )
 ";
 
-Element element = Ron.NET.Ron.Parse(ron);
+Element element = Ron.NET.RON.Parse(ron);
 
 Console.WriteLine(element["Stuff"]["String"]);
 Console.WriteLine(element["Stuff"]["Struct"]["W"]);
