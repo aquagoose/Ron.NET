@@ -73,10 +73,10 @@ public class Element
                 }
                 else
                 {
-                    if (indentationLevel > 0)
+                    //if (indentationLevel > 0)
+                    //    builder.AppendLine(name + ": (");
+                    //else
                         builder.AppendLine(name + ": (");
-                    else
-                        builder.AppendLine(name + "(");
                     builder.AppendLine(element.Serialize(indentationLevel + 1));
                     for (int indent = 0; indent < indentationLevel; indent++)
                         builder.Append("    ");
