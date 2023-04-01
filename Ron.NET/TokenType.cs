@@ -8,6 +8,9 @@ public enum TokenType
     OpenBrace,
     ClosingBrace,
     
+    OpenBracket,
+    ClosingBracket,
+    
     Colon,
     Comma,
     

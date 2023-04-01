@@ -13,7 +13,7 @@ public static class RON
         _genMethods = methods;
     }
     
-    public static Element Parse(string ron)
+    public static IElement Parse(string ron)
     {
         RonParser parser = new RonParser(ron);
 
@@ -32,10 +32,10 @@ public static class RON
         return _genMethods.Methods[obj.GetType()].serialize(obj).ToString();
     }
 
-    private static Element ParseElement(Token[] tokens)
+    private static IElement ParseElement(Token[] tokens)
     {
-        Element element = new Element();
-        
+        IElement element = null;
+
         for (int t = 0; t < tokens.Length; t++)
         {
             ref Token token = ref tokens[t];
@@ -44,9 +44,12 @@ public static class RON
             {
                 case TokenType.Identifier:
                 {
+                    // Handle enums.
                     if (tokens.Length == 1)
                     {
-                        element = new Element((string) token.Literal);
+                        // Enums are stored as strings as there is no other way to store them. RonGen is clever enough
+                        // to recognize this and will convert to an enum.
+                        element = new ValueElement<string>((string) token.Literal, ElementType.Enum);
                         continue;
                     }
 
@@ -69,6 +72,14 @@ public static class RON
 
                                 break;
                             
+                            case TokenType.OpenBracket:
+                                indentationLevels++;
+                                break;
+                            
+                            case TokenType.ClosingBracket:
+                                indentationLevels--;
+                                break;
+                            
                             case TokenType.Eof:
                                 goto HANDLE_IDENTIFIER;
                                 
@@ -79,34 +90,66 @@ public static class RON
                     
                     HANDLE_IDENTIFIER:
                     endToken--;
-                    element.Elements.Add((string) token.Literal, ParseElement(tokens[(t + 2)..endToken]));
+                    element ??= new ElementSet();
+                    element[(string) token.Literal] = ParseElement(tokens[(t + 2)..endToken]);
                     t = endToken;
 
                     break;
                 }
-                
-                case TokenType.OpenBrace:
-                    Console.WriteLine("MEP");
+
+                case TokenType.OpenBracket:
+                    Token lastToken = tokens[t];
+                    
+                    while (true)
+                    {
+                        ref Token nextToken = ref tokens[++t];
+
+                        switch (nextToken.TokenType)
+                        {
+                            case TokenType.ClosingBracket:
+                                //if (lastToken.TokenType != TokenType.Comma)
+                                    //element.Elements.Add(Random.Shared.NextInt64().ToString(), ParseElement(new []{ tokens[t - 1] }));
+                                goto BRACKET_EXIT;
+                                
+                            case TokenType.Comma:
+                                //element.Elements.Add(Random.Shared.NextInt64().ToString(), ParseElement(new []{ tokens[t - 1] }));
+                                break;
+                        }
+
+                        lastToken = nextToken;
+                    }
+
+                    BRACKET_EXIT: ;
                     break;
-                
-                case TokenType.ClosingBrace:
-                    Console.WriteLine("PEM");
-                    break;
-                
+
                 case TokenType.String:
+                    element = new ValueElement<string>((string) token.Literal, ElementType.String);
+                    break;
+                    
                 case TokenType.Char:
+                    element = new ValueElement<char>((char) token.Literal, ElementType.Char);
+                    break;
+                    
                 case TokenType.Number:
-                    element = new Element(token.Literal);
+                    element = new ValueElement<double>((double) token.Literal, ElementType.Number);
                     break;
                 
                 case TokenType.True:
-                    element = new Element(true);
+                    element = new ValueElement<bool>(true, ElementType.Bool);
                     break;
                 case TokenType.False:
-                    element = new Element(false);
+                    element = new ValueElement<bool>(false, ElementType.Bool);
                     break;
+                
+                case TokenType.Eof:
+                    break;
+
+                //default:
+                //    throw new Exception($"Unexpected token on line {token.Line}. (Token: {token.TokenType})");
             }
         }
+
+        EXIT: ;
 
         return element;
     }

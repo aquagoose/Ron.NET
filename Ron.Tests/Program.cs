@@ -3,18 +3,21 @@ using Ron.NET;
 using Ron.Tests;
 
 string ron = @"
-Stuff(
-    Number: 3,
-    String: ""This is a test!"",
-    Boolean: true,
-
-    Struct: (X: 0, Y: 1.23452, Z: ""hello"", W: false),
-)
+Number: 3,
+String: ""This is a test!"",
+Struct: (
+    X: 1.5,
+    Y: 2.3,
+    Z: 7
+),
+//Array: [
+//    1,
+//    4.3,
+//    ""Haha"",
+//    false
+//],
 ";
 
-Element element = Ron.NET.RON.Parse(ron);
-
-Console.WriteLine(element["Stuff"]["String"]);
-Console.WriteLine(element["Stuff"]["Struct"]["W"]);
-Console.WriteLine();
-Console.WriteLine(element);
+IElement element = RON.Parse(ron);
+Console.WriteLine(element["Struct"]["X"]);
+Console.WriteLine(element.Serialize(SerializeOptions.PrettyPrint));

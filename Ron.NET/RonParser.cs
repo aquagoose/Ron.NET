@@ -52,6 +52,13 @@ internal class RonParser
                     AddToken(ref tokens, TokenType.ClosingBrace);
                     break;
                 
+                case '[':
+                    AddToken(ref tokens, TokenType.OpenBracket);
+                    break;
+                case ']':
+                    AddToken(ref tokens, TokenType.ClosingBracket);
+                    break;
+                
                 case ':':
                     AddToken(ref tokens, TokenType.Colon);
                     break;
@@ -90,6 +97,15 @@ internal class RonParser
                     AddToken(ref tokens, TokenType.String, _ron[(_start + 1)..(_current - 1)]);
                     break;
                 
+                case '/':
+                    if (Peek() == '/')
+                    {
+                        while (Advance() != '\n') { }
+                        break;
+                    }
+
+                    goto default;
+
                 default:
                     if (IsDigit(c))
                     {
@@ -140,13 +156,13 @@ internal class RonParser
     
     private void AddToken(ref List<Token> tokens, TokenType type, object literal)
     {
-        tokens.Add(new Token(type, literal));
+        tokens.Add(new Token(type, literal, _line + 1));
     }
 
     private bool IsEof => _current >= _ron.Length;
 
     private Exception Error(string message)
     {
-        return new Exception($"Error on line {_line++}: " + message);
+        return new Exception($"Error on line {_line + 1}: " + message);
     }
 }

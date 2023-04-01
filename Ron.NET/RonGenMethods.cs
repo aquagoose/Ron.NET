@@ -5,5 +5,5 @@ namespace Ron.NET;
 
 public abstract class RonGenMethods
 {
-    protected internal Dictionary<Type, (Func<object, Element> serialize, Func<string, object> deserialize)> Methods;
+    protected internal Dictionary<Type, (Func<object, IElement> serialize, Func<string, object> deserialize)> Methods;
 }
