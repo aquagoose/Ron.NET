@@ -91,7 +91,7 @@ public static class RON
                     HANDLE_IDENTIFIER:
                     endToken--;
                     element ??= new ElementSet();
-                    element[(string) token.Literal] = ParseElement(tokens[(t + 2)..endToken]);
+                    ((ElementSet) element).Elements.Add((string) token.Literal, ParseElement(tokens[(t + 2)..endToken]));
                     t = endToken;
 
                     break;
@@ -99,20 +99,47 @@ public static class RON
 
                 case TokenType.OpenBracket:
                     Token lastToken = tokens[t];
+                    int tokenIndex = t;
+                    int bIndentationLevels = 0;
                     
                     while (true)
                     {
-                        ref Token nextToken = ref tokens[++t];
+                        ref Token nextToken = ref tokens[++tokenIndex];
 
                         switch (nextToken.TokenType)
                         {
+                            case TokenType.OpenParenthesis:
+                                bIndentationLevels++;
+                                break;
+                            
+                            case TokenType.ClosingParenthesis:
+                                bIndentationLevels--;
+                                break;
+                            
+                            case TokenType.OpenBracket:
+                                bIndentationLevels++;
+                                break;
+                            
                             case TokenType.ClosingBracket:
-                                //if (lastToken.TokenType != TokenType.Comma)
-                                    //element.Elements.Add(Random.Shared.NextInt64().ToString(), ParseElement(new []{ tokens[t - 1] }));
+                                bIndentationLevels--;
+
+                                if (bIndentationLevels <= 0)
+                                {
+                                    if (lastToken.TokenType != TokenType.Comma)
+                                    {
+                                        element ??= new ElementArray();
+                                        ((ElementArray) element).Elements.Add(ParseElement(tokens[(t + 1)..tokenIndex]));
+                                        t = tokenIndex;
+                                    }
+                                }
+
                                 goto BRACKET_EXIT;
                                 
-                            case TokenType.Comma:
-                                //element.Elements.Add(Random.Shared.NextInt64().ToString(), ParseElement(new []{ tokens[t - 1] }));
+                            case TokenType.Comma when bIndentationLevels == 0:
+                                element ??= new ElementArray();
+                                Console.WriteLine(tokens[tokenIndex]);
+                                ((ElementArray) element).Elements.Add(ParseElement(tokens[(t + 1)..tokenIndex]));
+                                t = tokenIndex;
                                 break;
                         }
 

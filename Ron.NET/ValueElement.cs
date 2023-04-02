@@ -13,22 +13,9 @@ public struct ValueElement<T> : IElement
         Type = type;
     }
 
-    public IElement this[int index]
-    {
-        get => throw new NotSupportedException("Value element cannot be indexed.");
-        set => throw new NotSupportedException("Value element cannot be indexed.");
-    }
+    public IElement this[int index] => throw new NotSupportedException("Value element cannot be indexed.");
 
-    public IElement this[string elementName]
-    {
-        get => throw new NotSupportedException("Value element cannot be indexed.");
-        set => throw new NotSupportedException("Value element cannot be indexed.");
-    }
-
-    public T1 As<T1>()
-    {
-        return (T1) (object) Value;
-    }
+    public IElement this[string elementName] => throw new NotSupportedException("Value element cannot be indexed.");
 
     public string Serialize(SerializeOptions options = SerializeOptions.None)
     {
@@ -38,7 +25,7 @@ public struct ValueElement<T> : IElement
             ElementType.Number => Value.ToString(),
             ElementType.Char => $"'{Value}'",
             ElementType.Enum => Value.ToString(),
-            ElementType.Bool => As<bool>() ? "true" : "false",
+            ElementType.Bool => (bool) (object) Value ? "true" : "false",
             _ => throw new ArgumentOutOfRangeException()
         };
     }

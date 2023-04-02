@@ -2,11 +2,9 @@ namespace Ron.NET;
 
 public interface IElement
 {
-    public IElement this[int index] { get; set; }
+    public IElement this[int index] { get; }
     
-    public IElement this[string elementName] { get; set; }
-
-    public T As<T>();
+    public IElement this[string elementName] { get; }
 
     public string Serialize(SerializeOptions options = SerializeOptions.None);
 }

@@ -10,12 +10,17 @@ Struct: (
     Y: 2.3,
     Z: 7
 ),
-//Array: [
-//    1,
-//    4.3,
-//    ""Haha"",
-//    false
-//],
+Array: [
+    1,
+    (X: 3.5, Y: 7.4, Z: 9, W: 1.0),
+    ""Haha"",
+    false
+],
+Hello: (
+    B: ""A string""
+),
+
+Stuff: Up
 ";
 
 IElement element = RON.Parse(ron);
