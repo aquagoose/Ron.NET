@@ -91,16 +91,16 @@ public static class Generator
                 field.FieldType == typeof(long) || field.FieldType == typeof(ulong) ||
                 field.FieldType == typeof(float) || field.FieldType == typeof(double))
             {
-                code.AppendLine($"({field.FieldType.FullName}) ((ValueElement<double>) {element}).Value;");
+                code.AppendLine($"({field.FieldType.FullName}) (({Namespace}.ValueElement<double>) {element}).Value;");
             }
             else if (field.FieldType == typeof(string))
-                code.AppendLine($"((ValueElement<string>) {element}).Value;");
+                code.AppendLine($"(({Namespace}.ValueElement<string>) {element}).Value;");
             else if (field.FieldType == typeof(char))
-                code.AppendLine($"((ValueElement<char>) {element}).Value;");
+                code.AppendLine($"(({Namespace}.ValueElement<char>) {element}).Value;");
             else if (field.FieldType == typeof(bool))
-                code.AppendLine($"((ValueElement<bool>) {element}).Value;");
+                code.AppendLine($"(({Namespace}.ValueElement<bool>) {element}).Value;");
             else if (field.FieldType.BaseType == typeof(Enum))
-                code.AppendLine($"System.Enum.Parse<{field.FieldType.FullName}>(((ValueElement<string>) {element}).Value);");
+                code.AppendLine($"System.Enum.Parse<{field.FieldType.FullName}>((({Namespace}.ValueElement<string>) {element}).Value);");
             else
             {
                 code.AppendLine($"new {field.FieldType.GetTypeNameWithoutGeneric() + (field.FieldType.IsGenericType ? $"<{field.FieldType.GetGenericArguments()[0].FullName}>" : "" )}();");

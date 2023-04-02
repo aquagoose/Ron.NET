@@ -27,9 +27,9 @@ public static class RON
         return (T) _genMethods.Methods[typeof(T)].deserialize(ron);
     }
 
-    public static string Serialize(object obj)
+    public static string Serialize(object obj, SerializeOptions options = SerializeOptions.None)
     {
-        return _genMethods.Methods[obj.GetType()].serialize(obj).ToString();
+        return IElement.Serialize(_genMethods.Methods[obj.GetType()].serialize(obj));
     }
 
     private static IElement ParseElement(Token[] tokens)
