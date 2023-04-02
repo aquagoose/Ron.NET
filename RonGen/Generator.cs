@@ -44,7 +44,7 @@ public static class Generator
         
         SKIP_ERROR:
         Console.WriteLine("Found!");
-        StringBuilder code = new StringBuilder($"{Namespace}.Element element = {Namespace}.RON.Parse(<<RON_SERIALIZER_TEXT>>);\n");
+        StringBuilder code = new StringBuilder($"{Namespace}.IElement element = {Namespace}.RON.Parse(<<RON_SERIALIZER_TEXT>>);\n");
         
         code.AppendLine($"var obj = new {type.FullName}();");
 
@@ -91,16 +91,16 @@ public static class Generator
                 field.FieldType == typeof(long) || field.FieldType == typeof(ulong) ||
                 field.FieldType == typeof(float) || field.FieldType == typeof(double))
             {
-                code.AppendLine($"({field.FieldType.FullName}) {element}.AsDouble;");
+                code.AppendLine($"({field.FieldType.FullName}) ((ValueElement<double>) {element}).Value;");
             }
             else if (field.FieldType == typeof(string))
-                code.AppendLine($"{element}.AsString;");
+                code.AppendLine($"((ValueElement<string>) {element}).Value;");
             else if (field.FieldType == typeof(char))
-                code.AppendLine($"{element}.AsChar;");
+                code.AppendLine($"((ValueElement<char>) {element}).Value;");
             else if (field.FieldType == typeof(bool))
-                code.AppendLine($"{element}.AsBool;");
+                code.AppendLine($"((ValueElement<bool>) {element}).Value;");
             else if (field.FieldType.BaseType == typeof(Enum))
-                code.AppendLine($"System.Enum.Parse<{field.FieldType.FullName}>({element}.AsString);");
+                code.AppendLine($"System.Enum.Parse<{field.FieldType.FullName}>(((ValueElement<string>) {element}).Value);");
             else
             {
                 code.AppendLine($"new {field.FieldType.GetTypeNameWithoutGeneric() + (field.FieldType.IsGenericType ? $"<{field.FieldType.GetGenericArguments()[0].FullName}>" : "" )}();");
@@ -118,7 +118,7 @@ public static class Generator
         Console.WriteLine("Generating serializer method...");
         methodName ??= "Serialize_" + type.GetTypeNameWithoutGeneric(true);
 
-        StringBuilder code = new StringBuilder($"public static {Namespace}.Element {methodName}(object value)" + "\n{\n");
+        StringBuilder code = new StringBuilder($"public static {Namespace}.IElement {methodName}(object value)" + "\n{\n");
 
         code.AppendLine($"    {type.FullName} sValue = ({type.FullName}) value;");
         
@@ -138,7 +138,7 @@ public static class Generator
     {
         const string defaultElement = "element";
         
-        StringBuilder code = new StringBuilder($"{Namespace}.Element {defaultElement} = new {Namespace}.Element();\n");
+        StringBuilder code = new StringBuilder($"{Namespace}.ElementSet {defaultElement} = new {Namespace}.ElementSet();\n");
 
         Console.WriteLine("    Generating serializer code...");
         code.Append(AppendSerializerCode(type, defaultElement, "<<RON_SERIALIZER_TYPE_NAME>>"));
@@ -165,13 +165,34 @@ public static class Generator
             if (!info.FieldType.IsPrimitive && info.FieldType.BaseType != typeof(Enum) && info.FieldType != typeof(string))
             {
                 string name = info.FieldType.GetTypeNameWithoutGeneric(true) + "_Element" + ((ulong) Random.Shared.NextInt64()).ToString("X");
-                code.AppendLine($"{Namespace}.Element {name} = new {Namespace}.Element();");
+                code.AppendLine($"{Namespace}.ElementSet {name} = new {Namespace}.ElementSet();");
                 code.AppendLine(AppendSerializerCode(info.FieldType, name, varName + $".{info.Name}"));
                 code.AppendLine($"{elementName}.Elements.Add(\"{info.Name}\", {name});");
             }
+            else if (info.FieldType.BaseType == typeof(Enum))
+                code.AppendLine($"{elementName}.Elements.Add(\"{info.Name}\", new {Namespace}.ValueElement<string>({varName}.{info.Name}.ToString(), {Namespace}.ElementType.Enum));");
             else
-                code.AppendLine($"{elementName}.Elements.Add(\"{info.Name}\", new {Namespace}.Element({varName}.{info.Name}));");
-            
+            {
+                string elementType = "?????????";
+
+                if (info.FieldType == typeof(sbyte) || info.FieldType == typeof(byte) ||
+                    info.FieldType == typeof(short) || info.FieldType == typeof(ushort) ||
+                    info.FieldType == typeof(int) || info.FieldType == typeof(uint) ||
+                    info.FieldType == typeof(long) || info.FieldType == typeof(ulong) ||
+                    info.FieldType == typeof(float) || info.FieldType == typeof(double))
+                {
+                    elementType = $"<double>({varName}.{info.Name}, {Namespace}.ElementType.Number)";
+                }
+                else if (info.FieldType == typeof(string))
+                    elementType = $"<string>({varName}.{info.Name}, {Namespace}.ElementType.String)";
+                else if (info.FieldType == typeof(char))
+                    elementType = $"<char>({varName}.{info.Name}, {Namespace}.ElementType.Char)";
+                else if (info.FieldType == typeof(bool))
+                    elementType = $"<bool>({varName}.{info.Name}, {Namespace}.ElementType.Bool)";
+                
+                code.AppendLine($"{elementName}.Elements.Add(\"{info.Name}\", new {Namespace}.ValueElement{elementType});");
+            }
+
             Console.WriteLine(Pad("        Done!", splitVar.Length * 2));
         }
 

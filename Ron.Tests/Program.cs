@@ -24,4 +24,4 @@ Stuff: Up
 ";
 
 IElement element = RON.Parse(ron);
-Console.WriteLine(IElement.Serialize(element, SerializeOptions.PrettyPrint));
+Console.WriteLine(IElement.Serialize(element, SerializeOptions.None));

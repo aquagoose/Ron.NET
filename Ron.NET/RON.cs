@@ -137,7 +137,6 @@ public static class RON
                                 
                             case TokenType.Comma when bIndentationLevels == 0:
                                 element ??= new ElementArray();
-                                Console.WriteLine(tokens[tokenIndex]);
                                 ((ElementArray) element).Elements.Add(ParseElement(tokens[(t + 1)..tokenIndex]));
                                 t = tokenIndex;
                                 break;
