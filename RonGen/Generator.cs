@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Reflection;
@@ -55,56 +56,99 @@ public static class Generator
         return code.ToString();
     }
 
-    private static string AppendDeserializerCode(Type type, string types)
+    private static string AppendDeserializerCode(Type type, string types, string objectName = "obj", string elementName = "element")
     {
         StringBuilder code = new StringBuilder();
         
-        foreach (FieldInfo field in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
+        string[] splitTypes = types.Split('.', StringSplitOptions.RemoveEmptyEntries);
+        
+        foreach (FieldInfo info in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
         {
-            string[] splitTypes = types.Split('.', StringSplitOptions.RemoveEmptyEntries);
-
-            Console.WriteLine(Pad($"        Generating deserializer for field {field.Name}...", splitTypes.Length * 2));
+            Console.WriteLine(Pad($"        Generating deserializer for field {info.Name}...", splitTypes.Length * 2));
             
-            if (field.GetCustomAttribute(typeof(RonIgnoreAttribute)) != null)
+            if (info.GetCustomAttribute(typeof(RonIgnoreAttribute)) != null)
             {
                 Console.WriteLine(Pad($"        Ignored.", splitTypes.Length * 2));
                 continue;
             }
             
-            StringBuilder element = new StringBuilder("element");
-
-            code.Append("obj.");
+            StringBuilder element = new StringBuilder(elementName);
+            
             foreach (string t in splitTypes)
-            {
-                code.Append(t + ".");
                 element.Append($"[\"{t}\"]");
-            }
 
-            element.Append($"[\"{field.Name}\"]");
+            element.Append($"[\"{info.Name}\"]");
 
-            code.Append(field.Name + " = ");
-
-
-            if (field.FieldType == typeof(sbyte) || field.FieldType == typeof(byte) ||
-                field.FieldType == typeof(short) || field.FieldType == typeof(ushort) ||
-                field.FieldType == typeof(int) || field.FieldType == typeof(uint) ||
-                field.FieldType == typeof(long) || field.FieldType == typeof(ulong) ||
-                field.FieldType == typeof(float) || field.FieldType == typeof(double))
+            if (typeof(IEnumerable).IsAssignableFrom(info.FieldType) && info.FieldType != typeof(string))
             {
-                code.AppendLine($"({field.FieldType.FullName}) (({Namespace}.ValueElement<double>) {element}).Value;");
+                string randomId = Random.Shared.NextInt64().ToString("X");
+                
+                Type fType;
+
+                if (info.FieldType.IsArray)
+                    fType = info.FieldType.GetElementType();
+                else
+                    fType = info.FieldType.GetGenericArguments()[0];
+                
+                string listName = $"{fType.GetTypeNameWithoutGeneric(true)}_List" + randomId;
+                string tempElementName = $"{fType.GetTypeNameWithoutGeneric(true)}_Element" + randomId;
+
+                code.AppendLine($"var {listName} = new System.Collections.Generic.List<{fType.FullName}>();");
+                code.AppendLine($"{Namespace}.ElementArray {tempElementName} = ({Namespace}.ElementArray) {element};");
+
+                string indexerName = tempElementName + "_Indexer";
+                
+                code.AppendLine($"for (int {indexerName} = 0; {indexerName} < {tempElementName}.Elements.Count; {indexerName}++)" + "\n{");
+                code.AppendLine($"    {fType.FullName} item = new {fType.FullName}();");
+
+                code.Append("    " + AppendDeserializerCode(fType, types, "item", tempElementName + $"[{indexerName}]").Replace("\n", "\n    "));
+
+                code.AppendLine($"{listName}.Add(item);");
+                
+                code.AppendLine("}");
+                
+                code.Append($"{objectName}.");
+            
+                foreach (string t in splitTypes)
+                    code.Append(t + ".");
+
+                code.Append(info.Name + " = ");
+
+                if (info.FieldType.IsArray)
+                    code.Append($"{listName}.ToArray();");
+                else
+                    code.Append($"new {info.FieldType.GetTypeNameWithoutGeneric()}<{fType}>({listName});");
+      
+                continue;
             }
-            else if (field.FieldType == typeof(string))
+
+            code.Append($"{objectName}.");
+            
+            foreach (string t in splitTypes)
+                code.Append(t + ".");
+
+            code.Append(info.Name + " = ");
+
+            if (info.FieldType == typeof(sbyte) || info.FieldType == typeof(byte) ||
+                info.FieldType == typeof(short) || info.FieldType == typeof(ushort) ||
+                info.FieldType == typeof(int) || info.FieldType == typeof(uint) ||
+                info.FieldType == typeof(long) || info.FieldType == typeof(ulong) ||
+                info.FieldType == typeof(float) || info.FieldType == typeof(double))
+            {
+                code.AppendLine($"({info.FieldType.FullName}) (({Namespace}.ValueElement<double>) {element}).Value;");
+            }
+            else if (info.FieldType == typeof(string))
                 code.AppendLine($"(({Namespace}.ValueElement<string>) {element}).Value;");
-            else if (field.FieldType == typeof(char))
+            else if (info.FieldType == typeof(char))
                 code.AppendLine($"(({Namespace}.ValueElement<char>) {element}).Value;");
-            else if (field.FieldType == typeof(bool))
+            else if (info.FieldType == typeof(bool))
                 code.AppendLine($"(({Namespace}.ValueElement<bool>) {element}).Value;");
-            else if (field.FieldType.BaseType == typeof(Enum))
-                code.AppendLine($"System.Enum.Parse<{field.FieldType.FullName}>((({Namespace}.ValueElement<string>) {element}).Value);");
+            else if (info.FieldType.BaseType == typeof(Enum))
+                code.AppendLine($"System.Enum.Parse<{info.FieldType.FullName}>((({Namespace}.ValueElement<string>) {element}).Value);");
             else
             {
-                code.AppendLine($"new {field.FieldType.GetTypeNameWithoutGeneric() + (field.FieldType.IsGenericType ? $"<{field.FieldType.GetGenericArguments()[0].FullName}>" : "" )}();");
-                code.Append(AppendDeserializerCode(field.FieldType, types + $".{field.Name}"));
+                code.AppendLine($"new {info.FieldType.GetTypeNameWithoutGeneric() + (info.FieldType.IsGenericType ? $"<{info.FieldType.GetGenericArguments()[0].FullName}>" : "" )}();");
+                code.Append(AppendDeserializerCode(info.FieldType, types + $".{info.Name}"));
             }
             
             Console.WriteLine(Pad("        Done!", splitTypes.Length * 2));
@@ -247,7 +291,7 @@ public static class Generator
 
     private static string GetTypeNameWithoutGeneric(this Type type, bool replace = false)
     {
-        string name = type.FullName;
+        string name = type.IsArray ? type.GetElementType().FullName : type.FullName;
         if (replace)
             name = name.Replace('.', '_');
         int index = name.IndexOf('`');
