@@ -17,17 +17,20 @@ public struct ValueElement<T> : IElement
 
     public IElement this[string elementName] => throw new NotSupportedException("Value element cannot be indexed.");
 
-    public string Serialize(SerializeOptions options = SerializeOptions.None)
+    public Token[] Tokenize()
     {
-        return Type switch
+        TokenType type = Type switch
         {
-            ElementType.String => $"\"{Value}\"",
-            ElementType.Number => Value.ToString(),
-            ElementType.Char => $"'{Value}'",
-            ElementType.Enum => Value.ToString(),
-            ElementType.Bool => (bool) (object) Value ? "true" : "false",
+            ElementType.String => TokenType.String,
+            ElementType.Number => TokenType.Number,
+            ElementType.Char => TokenType.Char,
+            ElementType.Enum => TokenType.Identifier,
+            ElementType.Bool => (bool) (object) Value ? TokenType.True : TokenType.False,
             _ => throw new ArgumentOutOfRangeException()
         };
+
+        Token token = new Token(type, Value, 0);
+        return new[] { token };
     }
 
     public override string ToString()

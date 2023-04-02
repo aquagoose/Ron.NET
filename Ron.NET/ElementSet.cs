@@ -36,25 +36,27 @@ public class ElementSet : IElement
         }
     }
 
-    public string Serialize(SerializeOptions options = SerializeOptions.None)
+    public Token[] Tokenize()
     {
-        StringBuilder builder = new StringBuilder();
+        List<Token> tokens = new List<Token>();
         int i = 0;
         foreach ((string name, IElement element) in Elements)
         {
-            builder.Append($"{name}: ");
+            tokens.Add(new Token(TokenType.Identifier, name, 0));
+            tokens.Add(new Token(TokenType.Colon, null, 0));
             if (element is ElementSet)
-                builder.Append($"({element.Serialize(options)})");
-            else
-                builder.Append(element.Serialize(options));
-            if (++i < Elements.Count)
             {
-                builder.Append(", ");
-                if (options == SerializeOptions.PrettyPrint)
-                    builder.AppendLine();
+                tokens.Add(new Token(TokenType.OpenParenthesis, null, 0));
+                tokens.AddRange(element.Tokenize());
+                tokens.Add(new Token(TokenType.ClosingParenthesis, null, 0));
             }
+            else
+                tokens.AddRange(element.Tokenize());
+
+            if (++i < Elements.Count)
+                tokens.Add(new Token(TokenType.Comma, null, 0));
         }
 
-        return builder.ToString();
+        return tokens.ToArray();
     }
 }

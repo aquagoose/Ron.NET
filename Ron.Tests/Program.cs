@@ -24,5 +24,4 @@ Stuff: Up
 ";
 
 IElement element = RON.Parse(ron);
-Console.WriteLine(element["Struct"]["X"]);
-Console.WriteLine(element.Serialize(SerializeOptions.PrettyPrint));
+Console.WriteLine(IElement.Serialize(element, SerializeOptions.PrettyPrint));
