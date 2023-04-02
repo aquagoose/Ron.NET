@@ -29,7 +29,7 @@ public static class RON
 
     public static string Serialize(object obj, SerializeOptions options = SerializeOptions.None)
     {
-        return IElement.Serialize(_genMethods.Methods[obj.GetType()].serialize(obj));
+        return IElement.Serialize(_genMethods.Methods[obj.GetType()].serialize(obj), options);
     }
 
     private static IElement ParseElement(Token[] tokens)
