@@ -98,13 +98,30 @@ internal class RonParser
                     break;
                 
                 case '/':
-                    if (Peek() == '/')
+                    switch (Peek())
                     {
-                        while (Advance() != '\n') { }
-                        break;
-                    }
+                        case '/':
+                            while (Advance() != '\n') { }
+                            goto SKIP_DEFAULT;
 
+                        case '*':
+                            Advance();
+                            char a;
+                            while ((a = Advance()) != '*' && Peek() != '/')
+                            {
+                                if (a == '\n')
+                                    _line++;
+                            }
+
+                            Advance();
+                            goto SKIP_DEFAULT;
+                    }
+                    
                     goto default;
+                    
+                    SKIP_DEFAULT: ;
+                    
+                    break;
 
                 default:
                     if (IsDigit(c))
