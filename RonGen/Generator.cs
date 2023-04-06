@@ -47,7 +47,7 @@ public static class Generator
         Console.WriteLine("Found!");
         StringBuilder code = new StringBuilder($"{Namespace}.IElement element = {Namespace}.RON.Parse(<<RON_SERIALIZER_TEXT>>);\n");
         
-        code.AppendLine($"var obj = new {type.FullName}();");
+        code.AppendLine($"var obj = new {type.GetTypeNameWithoutGeneric()}();");
 
         Console.WriteLine("    Generating deserializer code...");
         code.AppendLine(AppendDeserializerCode(type, ""));
@@ -92,18 +92,20 @@ public static class Generator
                 
                 string listName = $"{fType.GetTypeNameWithoutGeneric(true)}_List" + randomId;
                 string tempElementName = $"{fType.GetTypeNameWithoutGeneric(true)}_Element" + randomId;
-
-                code.AppendLine($"var {listName} = new System.Collections.Generic.List<{fType.FullName}>();");
+                
+                code.AppendLine($"var {listName} = new System.Collections.Generic.List<{fType.GetTypeNameWithoutGeneric(withGeneric: true)}>();");
                 code.AppendLine($"{Namespace}.ElementArray {tempElementName} = ({Namespace}.ElementArray) {element};");
 
                 string indexerName = tempElementName + "_Indexer";
+
+                string itemName = "item" + Random.Shared.NextInt64().ToString("X");
                 
                 code.AppendLine($"for (int {indexerName} = 0; {indexerName} < {tempElementName}.Elements.Count; {indexerName}++)" + "\n{");
-                code.AppendLine($"    {fType.FullName} item = new {fType.FullName}();");
+                code.AppendLine($"    var {itemName} = new {fType.GetTypeNameWithoutGeneric(withGeneric: true)}();");
 
-                code.Append("    " + AppendDeserializerCode(fType, types, "item", tempElementName + $"[{indexerName}]").Replace("\n", "\n    "));
+                code.Append("    " + AppendDeserializerCode(fType, types, itemName, tempElementName + $"[{indexerName}]").Replace("\n", "\n    "));
 
-                code.AppendLine($"{listName}.Add(item);");
+                code.AppendLine($"{listName}.Add({itemName});");
                 
                 code.AppendLine("}");
                 
@@ -117,7 +119,7 @@ public static class Generator
                 if (info.FieldType.IsArray)
                     code.Append($"{listName}.ToArray();");
                 else
-                    code.Append($"new {info.FieldType.GetTypeNameWithoutGeneric()}<{fType}>({listName});");
+                    code.Append($"new {info.FieldType.GetTypeNameWithoutGeneric()}<{fType.GetTypeNameWithoutGeneric(withGeneric: true)}>({listName});");
       
                 continue;
             }
@@ -135,7 +137,7 @@ public static class Generator
                 info.FieldType == typeof(long) || info.FieldType == typeof(ulong) ||
                 info.FieldType == typeof(float) || info.FieldType == typeof(double))
             {
-                code.AppendLine($"({info.FieldType.FullName}) (({Namespace}.ValueElement<double>) {element}).Value;");
+                code.AppendLine($"({info.FieldType.GetTypeNameWithoutGeneric()}) (({Namespace}.ValueElement<double>) {element}).Value;");
             }
             else if (info.FieldType == typeof(string))
                 code.AppendLine($"(({Namespace}.ValueElement<string>) {element}).Value;");
@@ -144,11 +146,11 @@ public static class Generator
             else if (info.FieldType == typeof(bool))
                 code.AppendLine($"(({Namespace}.ValueElement<bool>) {element}).Value;");
             else if (info.FieldType.BaseType == typeof(Enum))
-                code.AppendLine($"System.Enum.Parse<{info.FieldType.FullName}>((({Namespace}.ValueElement<string>) {element}).Value);");
+                code.AppendLine($"System.Enum.Parse<{info.FieldType.GetTypeNameWithoutGeneric()}>((({Namespace}.ValueElement<string>) {element}).Value);");
             else
             {
-                code.AppendLine($"new {info.FieldType.GetTypeNameWithoutGeneric() + (info.FieldType.IsGenericType ? $"<{info.FieldType.GetGenericArguments()[0].FullName}>" : "" )}();");
-                code.Append(AppendDeserializerCode(info.FieldType, types + $".{info.Name}"));
+                code.AppendLine($"new {info.FieldType.GetTypeNameWithoutGeneric(withGeneric: true)}();");
+                code.Append(AppendDeserializerCode(info.FieldType, types + $".{info.Name}", objectName, elementName));
             }
             
             Console.WriteLine(Pad("        Done!", splitTypes.Length * 2));
@@ -289,14 +291,18 @@ public static class Generator
         return code.ToString();
     }
 
-    private static string GetTypeNameWithoutGeneric(this Type type, bool replace = false)
+    private static string GetTypeNameWithoutGeneric(this Type type, bool replace = false, bool withGeneric = false)
     {
         string name = type.IsArray ? type.GetElementType().FullName : type.FullName;
+        name = name.Replace('+', '.');
         if (replace)
             name = name.Replace('.', '_');
         int index = name.IndexOf('`');
         if (index != -1)
-            return name[..index];
+            name = name[..index];
+        
+        if (withGeneric && type.GetGenericArguments().Length > 0)
+            name += $"<{type.GetGenericArguments()[0].GetTypeNameWithoutGeneric()}>";
 
         return name;
     }

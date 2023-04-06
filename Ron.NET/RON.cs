@@ -60,10 +60,12 @@ public static class RON
                     {
                         switch (tokens[endToken++].TokenType)
                         {
+                            case TokenType.OpenBracket:
                             case TokenType.OpenParenthesis:
                                 indentationLevels++;
                                 break;
                             
+                            case TokenType.ClosingBracket:
                             case TokenType.ClosingParenthesis:
                                 indentationLevels--;
 
@@ -71,15 +73,7 @@ public static class RON
                                     goto HANDLE_IDENTIFIER;
 
                                 break;
-                            
-                            case TokenType.OpenBracket:
-                                indentationLevels++;
-                                break;
-                            
-                            case TokenType.ClosingBracket:
-                                indentationLevels--;
-                                break;
-                            
+
                             case TokenType.Eof:
                                 goto HANDLE_IDENTIFIER;
                                 
@@ -98,54 +92,42 @@ public static class RON
                 }
 
                 case TokenType.OpenBracket:
-                    Token lastToken = tokens[t];
-                    int tokenIndex = t;
+                    int bEndToken = t;
                     int bIndentationLevels = 0;
-                    
+
                     while (true)
                     {
-                        ref Token nextToken = ref tokens[++tokenIndex];
-
-                        switch (nextToken.TokenType)
+                        switch (tokens[++bEndToken].TokenType)
                         {
+                            case TokenType.OpenBracket:
                             case TokenType.OpenParenthesis:
                                 bIndentationLevels++;
                                 break;
                             
+                            case TokenType.ClosingBracket:
                             case TokenType.ClosingParenthesis:
                                 bIndentationLevels--;
-                                break;
-                            
-                            case TokenType.OpenBracket:
-                                bIndentationLevels++;
-                                break;
-                            
-                            case TokenType.ClosingBracket:
-                                bIndentationLevels--;
 
-                                if (bIndentationLevels <= 0)
+                                if (bIndentationLevels < 0)
                                 {
-                                    if (lastToken.TokenType != TokenType.Comma)
-                                    {
-                                        element ??= new ElementArray();
-                                        ((ElementArray) element).Elements.Add(ParseElement(tokens[(t + 1)..tokenIndex]));
-                                        t = tokenIndex;
-                                    }
+                                    element ??= new ElementArray();
+                                    ((ElementArray) element).Elements.Add(ParseElement(tokens[t..bEndToken]));
+                                    t = bEndToken;
                                 }
 
-                                goto BRACKET_EXIT;
-                                
+                                goto EXIT_BRACKET;
+
                             case TokenType.Comma when bIndentationLevels == 0:
                                 element ??= new ElementArray();
-                                ((ElementArray) element).Elements.Add(ParseElement(tokens[(t + 1)..tokenIndex]));
-                                t = tokenIndex;
+                                ((ElementArray) element).Elements.Add(ParseElement(tokens[t..bEndToken]));
+                                t = bEndToken;
+                                
                                 break;
                         }
-
-                        lastToken = nextToken;
                     }
-
-                    BRACKET_EXIT: ;
+                    
+                    EXIT_BRACKET: ;
+                    
                     break;
 
                 case TokenType.String:
@@ -174,8 +156,6 @@ public static class RON
                 //    throw new Exception($"Unexpected token on line {token.Line}. (Token: {token.TokenType})");
             }
         }
-
-        EXIT: ;
 
         return element;
     }
