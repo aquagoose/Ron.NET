@@ -8,7 +8,7 @@ ID: ""Test"",
 Name: ""Stuff"",
 Type: Cube,
 Index: 1,
-Rotation: (X: 0, Y: 0, Z: 0, W: 1.0),
+Rotation: (X: 0, Y: 0, Z: 0, W: 1.0, B: (Bing: ""Chilling"", Stuff: Things, Nada: (Haha: ""What""))),
 /*Cubes: [
     (
         Position: (X: 0, Y: 0, Z: 0),

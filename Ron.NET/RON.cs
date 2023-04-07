@@ -35,7 +35,7 @@ public static class RON
     private static IElement ParseElement(Token[] tokens)
     {
         IElement element = null;
-
+        
         for (int t = 0; t < tokens.Length; t++)
         {
             ref Token token = ref tokens[t];
@@ -43,90 +43,82 @@ public static class RON
             switch (token.TokenType)
             {
                 case TokenType.Identifier:
-                {
-                    // Handle enums.
+                    // A single token means this should be interpreted as an enum value.
                     if (tokens.Length == 1)
                     {
-                        // Enums are stored as strings as there is no other way to store them. RonGen is clever enough
-                        // to recognize this and will convert to an enum.
                         element = new ValueElement<string>((string) token.Literal, ElementType.Enum);
+                        t++;
                         continue;
                     }
 
-                    int indentationLevels = 0;
-                    int endToken = t + 1;
-
-                    while (true)
+                    // Take a look at the next token.
+                    switch (tokens[t + 1].TokenType)
                     {
-                        switch (tokens[endToken++].TokenType)
-                        {
-                            case TokenType.OpenBracket:
-                            case TokenType.OpenParenthesis:
-                                indentationLevels++;
-                                break;
+                        // This handles the case of `XYZ(`
+                        case TokenType.OpenParenthesis:
+                            continue;
+
+                        // This handles the case of `XYZ:`
+                        case TokenType.Colon:
+                            int iIndentationLevel = 0;
+                            int iEndTokenPos = t + 1;
+                            Token iToken;
                             
-                            case TokenType.ClosingBracket:
-                            case TokenType.ClosingParenthesis:
-                                indentationLevels--;
-
-                                if (indentationLevels < 0)
-                                    goto HANDLE_IDENTIFIER;
-
-                                break;
-
-                            case TokenType.Eof:
-                                goto HANDLE_IDENTIFIER;
-                                
-                            case TokenType.Comma when indentationLevels == 0:
-                                goto HANDLE_IDENTIFIER;
-                        }
-                    }
-                    
-                    HANDLE_IDENTIFIER:
-                    endToken--;
-                    element ??= new ElementSet();
-                    ((ElementSet) element).Elements.Add((string) token.Literal, ParseElement(tokens[(t + 2)..endToken]));
-                    t = endToken;
-
-                    break;
-                }
-
-                case TokenType.OpenBracket:
-                    int bEndToken = t;
-                    int bIndentationLevels = 0;
-
-                    while (true)
-                    {
-                        switch (tokens[++bEndToken].TokenType)
-                        {
-                            case TokenType.OpenBracket:
-                            case TokenType.OpenParenthesis:
-                                bIndentationLevels++;
-                                break;
-                            
-                            case TokenType.ClosingBracket:
-                            case TokenType.ClosingParenthesis:
-                                bIndentationLevels--;
-
-                                if (bIndentationLevels < 0)
+                            while ((iToken = tokens[iEndTokenPos]).TokenType != TokenType.Comma ||
+                                   iIndentationLevel > 0)
+                            {
+                                switch (iToken.TokenType)
                                 {
-                                    element ??= new ElementArray();
-                                    ((ElementArray) element).Elements.Add(ParseElement(tokens[t..bEndToken]));
-                                    t = bEndToken;
+                                    case TokenType.OpenParenthesis:
+                                    case TokenType.OpenBracket:
+                                        iIndentationLevel++;
+                                        break;
+                                    
+                                    case TokenType.ClosingParenthesis:
+                                    case TokenType.ClosingBracket:
+                                        iIndentationLevel--;
+                                        break;
                                 }
 
-                                goto EXIT_BRACKET;
+                                iEndTokenPos++;
+                                if (iEndTokenPos >= tokens.Length)
+                                    break;
+                            }
 
-                            case TokenType.Comma when bIndentationLevels == 0:
-                                element ??= new ElementArray();
-                                ((ElementArray) element).Elements.Add(ParseElement(tokens[t..bEndToken]));
-                                t = bEndToken;
-                                
+                            t += 2;
+                            element ??= new ElementSet();
+                            ((ElementSet) element).Elements.Add((string) token.Literal, ParseElement(tokens[t..iEndTokenPos]));
+                            t = iEndTokenPos;
+
+                            break;
+                    }
+                    
+                    break;
+                
+                case TokenType.OpenParenthesis:
+                    int pIndentationLevel = 0;
+                    int pEndTokenPos = t;
+
+                    Token pToken;
+                    while ((pToken = tokens[++pEndTokenPos]).TokenType != TokenType.ClosingParenthesis ||
+                           pIndentationLevel > 0)
+                    {
+                        switch (pToken.TokenType)
+                        {
+                            case TokenType.OpenParenthesis:
+                            case TokenType.OpenBracket:
+                                pIndentationLevel++;
+                                break;
+                            
+                            case TokenType.ClosingParenthesis:
+                            case TokenType.ClosingBrace:
+                                pIndentationLevel--;
                                 break;
                         }
                     }
                     
-                    EXIT_BRACKET: ;
+                    t++;
+                    return ParseElement(tokens[t..pEndTokenPos]);
                     
                     break;
 
