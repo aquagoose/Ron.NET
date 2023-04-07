@@ -62,7 +62,7 @@ public interface IElement
                     if (IsPrettyPrint(options))
                     {
                         indendationLevel--;
-                        code.Append("\n]");
+                        code.Append('\n' + Pad("]", indendationLevel * indentationSpaces));
                     }
                     else
                         code.Append("]");

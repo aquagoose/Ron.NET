@@ -9,7 +9,7 @@ Name: ""Stuff"",
 Type: Cube,
 Index: 1,
 Rotation: (X: 0, Y: 0, Z: 0, W: 1.0, B: (Bing: ""Chilling"", Stuff: Things, Nada: (Haha: ""What""))),
-/*Cubes: [
+Cubes: [
     (
         Position: (X: 0, Y: 0, Z: 0),
         Bits: [
@@ -19,7 +19,7 @@ Rotation: (X: 0, Y: 0, Z: 0, W: 1.0, B: (Bing: ""Chilling"", Stuff: Things, Nada
             (X: 1, Y: 2, Z: 0)
         ]
     )
-]*/
+]
 ";
 
 IElement parsed = RON.Parse(ron);

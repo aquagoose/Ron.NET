@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
 
 namespace Ron.NET;
@@ -111,7 +112,7 @@ public static class RON
                                 break;
                             
                             case TokenType.ClosingParenthesis:
-                            case TokenType.ClosingBrace:
+                            case TokenType.ClosingBracket:
                                 pIndentationLevel--;
                                 break;
                         }
@@ -119,7 +120,48 @@ public static class RON
                     
                     t++;
                     return ParseElement(tokens[t..pEndTokenPos]);
+
+                case TokenType.OpenBracket:
+                    int bIndentationLevel = 0;
+                    int bEndTokenPos = t + 1;
+
+                    //Debug.Assert(element != null, "element != null");
+                    element ??= new ElementArray();
+
+                    Token bToken;
+                    while ((bToken = tokens[bEndTokenPos]).TokenType != TokenType.ClosingBracket || bIndentationLevel > 0)
+                    {
+                        switch (bToken.TokenType)
+                        {
+                            case TokenType.OpenParenthesis:
+                            case TokenType.OpenBracket:
+                                bIndentationLevel++;
+                                break;
+                            
+                            case TokenType.ClosingParenthesis:
+                            case TokenType.ClosingBracket:
+                                bIndentationLevel--;
+                                break;
+                            
+                            case TokenType.Comma when bIndentationLevel == 0:
+                                t++;
+                                ((ElementArray) element).Elements.Add(ParseElement(tokens[t..bEndTokenPos]));
+                                t = bEndTokenPos;
+                                break;
+                        }
+
+                        bEndTokenPos++;
+                        if (bEndTokenPos >= tokens.Length)
+                            break;
+                    }
                     
+                    if (bEndTokenPos - t > 1)
+                    {
+                        t++;
+                        ((ElementArray) element).Elements.Add(ParseElement(tokens[t..bEndTokenPos]));
+                        t = bEndTokenPos;
+                    }
+
                     break;
 
                 case TokenType.String:
