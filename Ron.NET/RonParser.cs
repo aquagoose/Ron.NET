@@ -124,7 +124,7 @@ internal class RonParser
                     break;
 
                 default:
-                    if (IsDigit(c))
+                    if (IsDigit(c) || (c == '-' && IsDigit(Peek())))
                     {
                         while (IsDigit(Peek()) || IsDigit(Peek(1)))
                             Advance();
