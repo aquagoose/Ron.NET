@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ron.Tests", "Ron.Tests\Ron.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RonGen", "RonGen\RonGen.csproj", "{8CEE3F8D-97EF-4D43-B22D-FF2C88C20AD3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ron.NET.Generator", "Ron.NET.Generator\Ron.NET.Generator.csproj", "{732E7B06-CF71-427A-88CA-129F96173A1A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{8CEE3F8D-97EF-4D43-B22D-FF2C88C20AD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8CEE3F8D-97EF-4D43-B22D-FF2C88C20AD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8CEE3F8D-97EF-4D43-B22D-FF2C88C20AD3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{732E7B06-CF71-427A-88CA-129F96173A1A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{732E7B06-CF71-427A-88CA-129F96173A1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{732E7B06-CF71-427A-88CA-129F96173A1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{732E7B06-CF71-427A-88CA-129F96173A1A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

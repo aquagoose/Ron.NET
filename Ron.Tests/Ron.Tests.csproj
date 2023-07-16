@@ -8,8 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Ron.NET.Generator\Ron.NET.Generator.csproj" />
       <ProjectReference Include="..\Ron.NET\Ron.NET.csproj" />
-      <ProjectReference Include="..\RonGen\RonGen.csproj" />
     </ItemGroup>
 
 </Project>
