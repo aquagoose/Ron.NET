@@ -8,7 +8,11 @@ Console.WriteLine(RonGenerator.GenerateDeserializerForType(typeof(TestStruct), "
 
 const string ron = @"
 test: 4,
-//Hello: 5
+Hello: 5,
+Test: ""This is a test."",
+Thing: true,
+
+MyVector: (X: 5.1, Y: 67, Z: -3.4766)
 ";
 
 IElement element = RON.Parse(ron);
@@ -19,10 +23,6 @@ Console.WriteLine(obj);
 TestStruct Deserialize(IElement element)
 {
     TestStruct obj = new TestStruct();
-
-    if (element.TryGet("Hello", out Ron.NET.Elements.IElement obj_Hello)) {
-        obj.Hello = (System.Int32) ((Ron.NET.Elements.ValueElement<double>) obj_Hello).Value;
-    }
-
+    
     return obj;
 }
