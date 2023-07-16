@@ -1,4 +1,4 @@
-namespace Ron.NET;
+namespace Ron.NET.Elements;
 
 public enum ElementType
 {

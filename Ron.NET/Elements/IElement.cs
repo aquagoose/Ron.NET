@@ -1,13 +1,17 @@
 using System;
 using System.Text;
 
-namespace Ron.NET;
+namespace Ron.NET.Elements;
 
 public interface IElement
 {
     public IElement this[int index] { get; }
     
     public IElement this[string elementName] { get; }
+
+    public bool TryGet(int index, out IElement element);
+
+    public bool TryGet(string elementName, out IElement element);
 
     public Token[] Tokenize();
 

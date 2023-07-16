@@ -6,4 +6,8 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Ron.NET\Ron.NET.csproj" />
+    </ItemGroup>
+
 </Project>

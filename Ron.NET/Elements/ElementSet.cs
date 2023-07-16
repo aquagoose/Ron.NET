@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
-namespace Ron.NET;
+namespace Ron.NET.Elements;
 
 public class ElementSet : IElement
 {
@@ -34,6 +33,22 @@ public class ElementSet : IElement
 
             return value;
         }
+    }
+
+    public bool TryGet(int index, out IElement element)
+    {
+        element = null;
+
+        if (index < 0 || index >= Elements.Count)
+            return false;
+
+        element = Elements.ElementAt(index).Value;
+        return true;
+    }
+
+    public bool TryGet(string elementName, out IElement element)
+    {
+        return Elements.TryGetValue(elementName, out element);
     }
 
     public Token[] Tokenize()
