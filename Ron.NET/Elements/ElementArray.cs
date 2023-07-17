@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 
-namespace Ron.NET;
+namespace Ron.NET.Elements;
 
 public class ElementArray : IElement
 {
@@ -24,7 +23,20 @@ public class ElementArray : IElement
         }
     }
 
-    public IElement this[string elementName] => throw new System.NotImplementedException();
+    public IElement this[string elementName] => throw new NotSupportedException();
+    
+    public bool TryGet(int index, out IElement element)
+    {
+        element = null;
+        
+        if (index < 0 || index >= Elements.Count)
+            return false;
+
+        element = Elements[index];
+        return true;
+    }
+
+    public bool TryGet(string elementName, out IElement element) => throw new NotSupportedException();
 
     public Token[] Tokenize()
     {

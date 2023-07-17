@@ -1,19 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Reflection;
+﻿using Ron.NET.Elements;
 
 namespace Ron.NET;
 
 public static class RON
 {
-    private static RonGenMethods _genMethods;
-
-    public static void Init(RonGenMethods methods)
-    {
-        _genMethods = methods;
-    }
-    
     public static IElement Parse(string ron)
     {
         RonParser parser = new RonParser(ron);
@@ -23,7 +13,7 @@ public static class RON
         return ParseElement(tokens);
     }
 
-    public static T Deserialize<T>(string ron)
+    /*public static T Deserialize<T>(string ron)
     {
         return (T) _genMethods.Methods[typeof(T)].deserialize(ron);
     }
@@ -31,7 +21,7 @@ public static class RON
     public static string Serialize(object obj, SerializeOptions options = SerializeOptions.None)
     {
         return IElement.Serialize(_genMethods.Methods[obj.GetType()].serialize(obj), options);
-    }
+    }*/
 
     private static IElement ParseElement(Token[] tokens)
     {

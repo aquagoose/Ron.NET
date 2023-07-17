@@ -1,6 +1,5 @@
 using System;
-
-namespace Ron.NET;
+namespace Ron.NET.Elements;
 
 public struct ValueElement<T> : IElement
 {
@@ -16,6 +15,16 @@ public struct ValueElement<T> : IElement
     public IElement this[int index] => throw new NotSupportedException("Value element cannot be indexed.");
 
     public IElement this[string elementName] => throw new NotSupportedException("Value element cannot be indexed.");
+    
+    public bool TryGet(int index, out IElement element)
+    {
+        throw new NotSupportedException("Value element cannot be indexed.");
+    }
+
+    public bool TryGet(string elementName, out IElement element)
+    {
+        throw new NotSupportedException("Value element cannot be indexed.");
+    }
 
     public Token[] Tokenize()
     {
