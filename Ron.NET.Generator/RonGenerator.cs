@@ -10,11 +10,13 @@ public static class RonGenerator
 {
     private static string _iElementFullName;
     private static string _valueElementFullName;
+    private static string _arrayElementFullName;
     
     static RonGenerator()
     {
         _iElementFullName = "Ron.NET.Elements.IElement";
         _valueElementFullName = "Ron.NET.Elements.ValueElement";
+        _arrayElementFullName = "Ron.NET.Elements.ElementArray";
     }
     
     /// <summary>
@@ -47,15 +49,21 @@ public static class RonGenerator
             if (typeof(IEnumerable).IsAssignableFrom(fType) && fType != typeof(string))
             {
                 string fTypeName = fType.GetElementType().FullName;
-                string fVarName = GetPrintableName(fTypeName);
+                string fVarName = GetPrintableName(fTypeName) + $"_{Random.Shared.NextInt64().ToString("X")}";
 
                 string indexerName = fVarName + "_Indexer";
-                builder.AppendLine($"    {fVarName}_")
-                builder.AppendLine($"    for (int {indexerName} = 0; )")
-                builder.AppendLine($"    {fTypeName} {fVarName} = new {fTypeName}();");
-                builder.AppendLine("    " + Indent(GenerateDeserializerForType(fType.GetElementType(), fieldName, fVarName)));
+                builder.AppendLine($"    System.Collections.Generic.List<{fTypeName}> {fVarName}_List = new System.Collections.Generic.List<{fTypeName}>();");
+                builder.AppendLine($"    {_arrayElementFullName} {fVarName}_Array = ({_arrayElementFullName}) {varName};");
+                builder.AppendLine($"    for (int {indexerName} = 0; {indexerName} < {fVarName}_Array.Elements.Count; {indexerName}++) {{");
+                builder.AppendLine($"        {fTypeName} {fVarName} = new {fTypeName}();");
+                builder.AppendLine("        " + Indent(GenerateDeserializerForType(fType.GetElementType(), varName + $"[{indexerName}]", fVarName), 2));
+                builder.AppendLine($"        {fVarName}_List.Add({fVarName});");
+                builder.AppendLine("    }");
 
-                builder.AppendLine("\n}");
+                if (fType.IsArray)
+                    builder.AppendLine($"    {fieldName} = {fVarName}_List.ToArray();");
+
+                builder.AppendLine("}");
                 
                 continue;
             }
@@ -72,6 +80,10 @@ public static class RonGenerator
                 builder.Append($"(({_valueElementFullName}<bool>) {varName}).Value;");
             else if (fType == typeof(string))
                 builder.Append($"(({_valueElementFullName}<string>) {varName}).Value;");
+            else if (fType.IsEnum)
+            {
+                builder.Append()
+            }
             else // Handle complex types, such as other structs & classes.
             {
                 if (fType == type)
