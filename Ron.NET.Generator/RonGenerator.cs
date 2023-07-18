@@ -8,17 +8,13 @@ namespace Ron.NET.Generator;
 
 public static class RonGenerator
 {
-    private static string _iElementFullName;
-    private static string _valueElementFullName;
-    private static string _arrayElementFullName;
-    
-    static RonGenerator()
-    {
-        _iElementFullName = "Ron.NET.Elements.IElement";
-        _valueElementFullName = "Ron.NET.Elements.ValueElement";
-        _arrayElementFullName = "Ron.NET.Elements.ElementArray";
-    }
-    
+    private const string Namespace = "Ron.NET";
+    private const string Elements = $"{Namespace}.Elements";
+
+    private const string IElement = $"{Elements}.IElement";
+    private const string ValueElement = $"{Elements}.ValueElement";
+    private const string ElementArray = $"{Elements}.ElementArray";
+
     /// <summary>
     /// Generate a deserializer for a given type.
     /// </summary>
@@ -30,78 +26,36 @@ public static class RonGenerator
     {
         StringBuilder builder = new StringBuilder();
 
-        // Loop through fields. Properties aren't supported right now because effort.
-        foreach (FieldInfo info in type.GetFields())
+        foreach (FieldInfo field in type.GetFields(BindingFlags.Instance | BindingFlags.Public))
         {
-            // Get the field name + type.
-            string fName = info.Name;
-            Type fType = info.FieldType;
+            Type fieldType = field.FieldType;
+            string fieldTypeName = fieldType.FullName;
+            string fieldName = field.Name;
 
-            // Get the generated field name that the value will be assigned to.
-            string fieldName = objName + "." + fName;
-            // In order to make sure the names are unique, the printable name will be the same as the field name.
-            string varName = GetPrintableName(fieldName);
+            string fieldAccessor = objName + "." + fieldName;
+            string fieldAccessorPrintable = GetPrintableName(fieldAccessor);
 
-            // Check to make sure the value is available in RON.
             builder.AppendLine(
-                $"if ({elementName}.TryGet(\"{fName}\", out {_iElementFullName} {varName})) {{");
-            
-            if (typeof(IEnumerable).IsAssignableFrom(fType) && fType != typeof(string))
+                $"if ({elementName}.TryGet(\"{fieldName}\", out {IElement} {fieldAccessorPrintable})) {{");
+
+            builder.Append("    " + fieldAccessor + " = ");
+
+            if (fieldType == typeof(string))
+                builder.AppendLine($"(({ValueElement}<string>) {fieldAccessorPrintable}).Value;");
+            else if (fieldType == typeof(char))
+                builder.AppendLine($"(({ValueElement}<char>) {fieldAccessorPrintable}).Value;");
+            else if (fieldType == typeof(bool))
+                builder.AppendLine($"(({ValueElement}<bool>) {fieldAccessorPrintable}).Value;");
+            else if (fieldType.IsEnum)
+                builder.AppendLine($"System.Enum.Parse<{fieldTypeName}>((({ValueElement}<string>) {fieldAccessorPrintable}).Value);");
+            else if (fieldType.IsPrimitive)
+                builder.AppendLine($"({fieldTypeName}) (({ValueElement}<double>) {fieldAccessorPrintable}).Value;");
+            else
             {
-                string fTypeName = fType.GetElementType().FullName;
-                string fVarName = GetPrintableName(fTypeName) + $"_{Random.Shared.NextInt64().ToString("X")}";
-
-                string indexerName = fVarName + "_Indexer";
-                builder.AppendLine($"    System.Collections.Generic.List<{fTypeName}> {fVarName}_List = new System.Collections.Generic.List<{fTypeName}>();");
-                builder.AppendLine($"    {_arrayElementFullName} {fVarName}_Array = ({_arrayElementFullName}) {varName};");
-                builder.AppendLine($"    for (int {indexerName} = 0; {indexerName} < {fVarName}_Array.Elements.Count; {indexerName}++) {{");
-                builder.AppendLine($"        {fTypeName} {fVarName} = new {fTypeName}();");
-                builder.AppendLine("        " + Indent(GenerateDeserializerForType(fType.GetElementType(), varName + $"[{indexerName}]", fVarName), 2));
-                builder.AppendLine($"        {fVarName}_List.Add({fVarName});");
-                builder.AppendLine("    }");
-
-                if (fType.IsArray)
-                    builder.AppendLine($"    {fieldName} = {fVarName}_List.ToArray();");
-
-                builder.AppendLine("}");
-                
-                continue;
+                builder.AppendLine("default;");
             }
 
-            builder.Append($"    {fieldName} = ");
-
-            // Handle various types of primitives.
-            if (fType.IsPrimitive && fType != typeof(char) && fType != typeof(bool))
-            {
-                builder.Append(
-                    $"({fType.FullName}) (({_valueElementFullName}<double>) {varName}).Value;");
-            }
-            else if (fType == typeof(bool))
-                builder.Append($"(({_valueElementFullName}<bool>) {varName}).Value;");
-            else if (fType == typeof(string))
-                builder.Append($"(({_valueElementFullName}<string>) {varName}).Value;");
-            else if (fType.IsEnum)
-            {
-                builder.Append()
-            }
-            else // Handle complex types, such as other structs & classes.
-            {
-                if (fType == type)
-                {
-                    throw new InvalidOperationException(
-                        "Field type cannot be the same as the current type, as this causes issues during generation.");
-                }
-
-                // Assign the new type to the current field.
-                builder.AppendLine($"new {fType.FullName}();");
-
-                // Then, append a deserializer for said type.
-                // We pass the printable variable name, as well as the field name. This makes everything else automatic
-                // beyond belief!
-                builder.Append("    " + Indent(GenerateDeserializerForType(fType, varName, fieldName)));
-            }
-
-            builder.AppendLine("\n}");
+            builder.AppendLine("}");
         }
 
         return builder.ToString();

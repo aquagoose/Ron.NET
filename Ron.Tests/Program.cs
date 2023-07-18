@@ -7,34 +7,20 @@ using Ron.Tests;
 Console.WriteLine(RonGenerator.GenerateDeserializerForType(typeof(TestStruct), "element", "obj"));
 
 const string ron = @"
-test: 4,
 Hello: 5,
 Test: ""This is a test."",
 Thing: true,
 
+MyEnum: Things,
+
 MyVector: (X: 5.1, Y: 67, Z: -3.4766),
 
+HelloAgain: ""Hello!"",
+
 MyArr: [
-    (X: 1, Y: 0, Z: 0),
-    (X: 0, Y: 1, Z: 0),
-    (X: 0, Y: 0, Z: 1),
-],
-
-Structs: [
-    (
-        Blah: 2.5,
-        Value: [
-            (X: 2.4, Y: 6.87, Z: 3),
-            (X: 12, Y: 0, Z: 1.2),
-        ]
-    ),
-
-    (
-        Blah: -4,
-        Value: [
-            (X: 2)
-        ]
-    )
+    (X: 1.0, Y: 2.0, Z: 3.0),
+    (Z: 1.2, Y: 34),
+    (Y: -24.3324)
 ]
 ";
 
@@ -46,6 +32,29 @@ Console.WriteLine(obj);
 TestStruct Deserialize(IElement element)
 {
     TestStruct obj = new TestStruct();
+    
+    if (element.TryGet("Hello", out Ron.NET.Elements.IElement obj_Hello)) {
+        obj.Hello = (System.Int32) ((Ron.NET.Elements.ValueElement<double>) obj_Hello).Value;
+    }
+    if (element.TryGet("Test", out Ron.NET.Elements.IElement obj_Test)) {
+        obj.Test = ((Ron.NET.Elements.ValueElement<string>) obj_Test).Value;
+    }
+    if (element.TryGet("Thing", out Ron.NET.Elements.IElement obj_Thing)) {
+        obj.Thing = ((Ron.NET.Elements.ValueElement<bool>) obj_Thing).Value;
+    }
+    if (element.TryGet("MyEnum", out Ron.NET.Elements.IElement obj_MyEnum)) {
+        obj.MyEnum = System.Enum.Parse<Ron.Tests.MyEnum>(((Ron.NET.Elements.ValueElement<string>) obj_MyEnum).Value);
+    }
+    if (element.TryGet("MyVector", out Ron.NET.Elements.IElement obj_MyVector)) {
+        obj.MyVector = default;
+    }
+    if (element.TryGet("HelloAgain", out Ron.NET.Elements.IElement obj_HelloAgain)) {
+        obj.HelloAgain = ((Ron.NET.Elements.ValueElement<string>) obj_HelloAgain).Value;
+    }
+    if (element.TryGet("MyArr", out Ron.NET.Elements.IElement obj_MyArr)) {
+        obj.MyArr = default;
+    }
+
 
     return obj;
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -9,6 +10,8 @@ public struct TestStruct
     public string Test;
     public bool Thing;
 
+    public MyEnum MyEnum;
+
     public Vector3 MyVector;
 
     public string HelloAgain;
@@ -16,4 +19,11 @@ public struct TestStruct
     //public Matrix4x4 PleaseHelpIHaveRunOutOfVariableNames;
 
     public Vector3[] MyArr;
+}
+
+public enum MyEnum
+{
+    Stuff,
+    Things,
+    Blah
 }
