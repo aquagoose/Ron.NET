@@ -26,8 +26,11 @@ public static class RonGenerator
     {
         StringBuilder builder = new StringBuilder();
 
-        foreach (FieldInfo field in type.GetFields(BindingFlags.Instance | BindingFlags.Public))
+        FieldInfo[] fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public);
+        for (int f = 0; f < fields.Length; f++)
         {
+            ref FieldInfo field = ref fields[f];
+
             Type fieldType = field.FieldType;
             string fieldTypeName = fieldType.FullName;
             string fieldName = field.Name;
@@ -52,10 +55,15 @@ public static class RonGenerator
                 builder.AppendLine($"({fieldTypeName}) (({ValueElement}<double>) {fieldAccessorPrintable}).Value;");
             else
             {
-                builder.AppendLine("default;");
+                builder.AppendLine($"new {fieldTypeName}();");
+                
+                builder.AppendLine(Indent(GenerateDeserializerForType(fieldType, fieldAccessorPrintable, fieldAccessor)));
             }
 
-            builder.AppendLine("}");
+            if (f < fields.Length - 1)
+                builder.AppendLine("}");
+            else
+                builder.Append("}");
         }
 
         return builder.ToString();
@@ -63,9 +71,10 @@ public static class RonGenerator
 
     private static string Indent(string text, int indentLevel = 1)
     {
-        string spaces = '\n' + new string(' ', indentLevel * 4);
+        string indent = new string(' ', indentLevel * 4);
+        string spaces = '\n' + indent;
 
-        return text.Replace("\n", spaces);
+        return indent + text.Replace("\n", spaces);
     }
 
     private static string GetPrintableName(string name)

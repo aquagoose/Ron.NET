@@ -46,15 +46,20 @@ TestStruct Deserialize(IElement element)
         obj.MyEnum = System.Enum.Parse<Ron.Tests.MyEnum>(((Ron.NET.Elements.ValueElement<string>) obj_MyEnum).Value);
     }
     if (element.TryGet("MyVector", out Ron.NET.Elements.IElement obj_MyVector)) {
-        obj.MyVector = default;
+        obj.MyVector = new System.Numerics.Vector3();
+        if (obj_MyVector.TryGet("X", out Ron.NET.Elements.IElement obj_MyVector_X)) {
+            obj.MyVector.X = (System.Single) ((Ron.NET.Elements.ValueElement<double>) obj_MyVector_X).Value;
+        }
+        if (obj_MyVector.TryGet("Y", out Ron.NET.Elements.IElement obj_MyVector_Y)) {
+            obj.MyVector.Y = (System.Single) ((Ron.NET.Elements.ValueElement<double>) obj_MyVector_Y).Value;
+        }
+        if (obj_MyVector.TryGet("Z", out Ron.NET.Elements.IElement obj_MyVector_Z)) {
+            obj.MyVector.Z = (System.Single) ((Ron.NET.Elements.ValueElement<double>) obj_MyVector_Z).Value;
+        }
     }
     if (element.TryGet("HelloAgain", out Ron.NET.Elements.IElement obj_HelloAgain)) {
         obj.HelloAgain = ((Ron.NET.Elements.ValueElement<string>) obj_HelloAgain).Value;
     }
-    if (element.TryGet("MyArr", out Ron.NET.Elements.IElement obj_MyArr)) {
-        obj.MyArr = default;
-    }
-
 
     return obj;
 }
